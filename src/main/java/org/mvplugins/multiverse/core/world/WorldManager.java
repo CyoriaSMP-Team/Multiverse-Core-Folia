@@ -1,6 +1,7 @@
 package org.mvplugins.multiverse.core.world;
 
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -1010,7 +1011,7 @@ public final class WorldManager {
     private Attempt<World, WorldCreatorFailureReason> createBukkitWorld(WorldCreator worldCreator) {
         return Try.of(() -> {
             this.loadTracker.add(worldCreator.name());
-            World world = worldCreator.createWorld();
+            World world = FoliaScheduler.isFoliaServer() ? createFoliaWorld(worldCreator) : worldCreator.createWorld();
             if (world == null) {
                 throw new MultiverseWorldException(Message.of(MVCorei18n.EXCEPTION_MULTIVERSEWORLD_CREATENULL));
             }
@@ -1025,6 +1026,29 @@ public final class WorldManager {
                         Replace.WORLD.with(worldCreator.name()),
                         Replace.ERROR.with(throwable)),
                 Attempt::success);
+    }
+
+    private World createFoliaWorld(WorldCreator worldCreator) throws Exception {
+        if (!Bukkit.getServer().isGlobalTickThread()) {
+            throw new IllegalStateException("Folia world creation must run on the global region");
+        }
+        var moreFoWorld = Bukkit.getPluginManager().getPlugin("MoreFoWorld");
+        if (moreFoWorld == null || !moreFoWorld.isEnabled()) {
+            throw new IllegalStateException("Folia world creation requires MoreFoWorld");
+        }
+        try {
+            return (World) moreFoWorld.getClass().getMethod("createWorld", WorldCreator.class)
+                    .invoke(moreFoWorld, worldCreator);
+        } catch (InvocationTargetException exception) {
+            Throwable cause = exception.getCause();
+            if (cause instanceof Exception checkedException) {
+                throw checkedException;
+            }
+            if (cause instanceof Error error) {
+                throw error;
+            }
+            throw new RuntimeException(cause);
+        }
     }
 
     /**
