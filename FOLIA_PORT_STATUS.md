@@ -25,8 +25,8 @@ path below is complete or safe.
   `UnsupportedOperationException`; the tested artifact therefore cannot autoload `lobby` through
   Bukkit. Moving the call to the global scheduler cannot fix this platform API gap. World load and
   unload are also listed by Folia as unsupported APIs.
-- [ ] Startup config handling also logged `Cannot modify server settings off of the global region`.
-  The exact config callback is not yet identified.
+- [ ] Live retest is pending for the startup config error `Cannot modify server settings off of the global region`.
+  World-level config setters and spawn-category settings now use Folia's global region scheduler.
 - [ ] `WorldManager` load/unload/import/remove/regenerate/delete, `Bukkit.getWorld(s)`, world config
   mutation, and plugin event dispatch still need an ownership-safe design that preserves result
   APIs and event ordering.
@@ -45,6 +45,9 @@ path below is complete or safe.
 
 No Gradle command was run on the Home Server. The branch is `folia/1.21.11` and uses Paper API
 `1.21.11-R0.1-SNAPSHOT` in `build.gradle`.
+
+Local validation: `./gradlew build` passed on Java 21 with 183 tests and no failures. The focused
+`FoliaSchedulerTest` also passed. The live Folia startup retest is still pending.
 
 GitHub Actions compile and test command: `./gradlew build`
 

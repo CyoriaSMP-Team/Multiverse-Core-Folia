@@ -33,6 +33,7 @@ import org.mvplugins.multiverse.core.world.helpers.DimensionFinder.DimensionForm
 public final class CoreConfig {
     public static final String CONFIG_FILENAME = "config.yml";
 
+    private final MultiverseCore multiverseCore;
     private final Path configPath;
     private final CoreConfigNodes configNodes;
     private final CommentedConfigurationHandle configHandle;
@@ -43,6 +44,7 @@ public final class CoreConfig {
             @NotNull MultiverseCore core,
             @NotNull CoreConfigNodes configNodes
     ) {
+        this.multiverseCore = core;
         this.configPath = Path.of(core.getDataFolder().getPath(), CONFIG_FILENAME);
         this.configNodes = configNodes;
         this.configHandle = CommentedConfigurationHandle.builder(configPath, configNodes.getNodes())
@@ -86,6 +88,11 @@ public final class CoreConfig {
                         .build())
                 .build();
         this.stringPropertyHandle = new StringPropertyHandle(configHandle);
+    }
+
+    @ApiStatus.Internal
+    public @NotNull MultiverseCore getMultiverseCore() {
+        return multiverseCore;
     }
 
     private void migrateFromOldConfigFile() {

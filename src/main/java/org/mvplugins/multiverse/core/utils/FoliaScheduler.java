@@ -36,4 +36,13 @@ public final class FoliaScheduler {
     public static void runGlobalLater(@NotNull Plugin plugin, @NotNull Runnable action, long delayTicks) {
         Bukkit.getGlobalRegionScheduler().runDelayed(plugin, task -> action.run(), delayTicks);
     }
+
+    /** Runs server-wide configuration changes on Folia's global region. */
+    public static void runGlobal(@NotNull Plugin plugin, @NotNull Runnable action) {
+        if (isFoliaServer()) {
+            Bukkit.getGlobalRegionScheduler().execute(plugin, action);
+        } else {
+            action.run();
+        }
+    }
 }
