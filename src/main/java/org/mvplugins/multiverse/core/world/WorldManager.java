@@ -547,7 +547,8 @@ public final class WorldManager {
 
         return Try.of(() -> WorldCreatorCompatibility.ofNameAndKey(mvWorld.getKey(), mvWorld.getName())
                         .environment(mvWorld.getEnvironment())
-                        .seed(mvWorld.getSeed()))
+                        .seed(mvWorld.getSeed())
+                        .generatorSettings(mvWorld.getGeneratorSettings()))
                 .fold(throwable -> Attempt.<WorldCreator, WorldCreatorFailureReason>failure(WorldCreatorFailureReason.BUKKIT_CREATION_FAILED,
                                 Replace.WORLD.with(mvWorld.getName()),
                                 Replace.ERROR.with(throwable)),

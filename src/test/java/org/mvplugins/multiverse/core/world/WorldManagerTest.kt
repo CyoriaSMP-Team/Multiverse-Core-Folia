@@ -177,6 +177,16 @@ class WorldManagerTest : TestWithMockBukkit() {
     }
 
     @Test
+    fun `Reload world preserves saved generator settings`() {
+        val configured = worldManager.getLoadedWorld("World2").get()
+        assertTrue(configured.getWorldConfig().setGeneratorSettings("{\"biome\":\"plains\"}").isSuccess())
+        assertTrue(worldManager.unloadWorld(UnloadWorldOptions.world(configured).saveBukkitWorld(true)).isSuccess)
+
+        assertTrue(worldManager.loadWorld(LoadWorldOptions.world(configured)).isSuccess)
+        assertEquals("{\"biome\":\"plains\"}", worldManager.getLoadedWorld("World2").get().generatorSettings)
+    }
+
+    @Test
     fun `Load world failed - invalid world folder`() {
         assertTrue(worldManager.unloadWorld(UnloadWorldOptions.world(world2)).isSuccess)
         File(Bukkit.getWorldContainer(), "World2/").deleteRecursively()
