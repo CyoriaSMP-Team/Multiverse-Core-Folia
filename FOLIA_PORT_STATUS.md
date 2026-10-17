@@ -1,8 +1,8 @@
 # Folia 1.21.11 port status
 
-**Status: incomplete; Folia support remains disabled.** `plugin.yml` explicitly sets
-`folia-supported: false`. Do not change it until every startup and runtime ownership path below
-has been audited and verified on Folia.
+**Status: experimental live testing.** `plugin.yml` sets `folia-supported: true` so Folia can load
+the fork for the requested iterative test-and-fix cycle. This is not a claim that every ownership
+path below is complete or safe.
 
 ## Verified source changes
 
@@ -15,7 +15,7 @@ has been audited and verified on Folia.
   world ownership review before Folia support can be enabled.
 - [x] Preserved saved generator settings when `WorldManager` recreates a world during load.
 - [x] Added a `WorldManagerTest` regression case for generator-settings retention over unload/load.
-- [x] Kept Folia plugin metadata disabled pending the blockers below.
+- [x] Enabled Folia plugin metadata for iterative runtime testing; the unresolved blockers below remain open.
 - [ ] Run tests and compile. This host is not to run Gradle; use GitHub Actions.
 
 ## Unresolved blockers
@@ -34,8 +34,8 @@ has been audited and verified on Folia.
   behavior handled separately.
 - [ ] Other entity/world API access from async completions, listeners, command completion, and
   custom generator/biome-provider callbacks has not received a complete ownership audit.
-- [ ] No Folia runtime integration test has run. MockBukkit tests cannot establish Folia region
-  ownership correctness.
+- [ ] Player, portal and multi-region runtime behavior is not yet covered. MockBukkit tests cannot
+  establish Folia region ownership correctness.
 
 ## Validation
 
@@ -46,6 +46,7 @@ GitHub Actions compile and test command: `./gradlew build`
 
 Focused test command: `./gradlew test --tests org.mvplugins.multiverse.core.world.WorldManagerTest`
 
-The focused test and compile still need to pass in CI. Folia support must remain false until the
-blockers are resolved and Folia runtime checks confirm startup, world lifecycle, portals, and
-player/entity operations use valid owners.
+GitHub Actions run `39040848405` passed the compile and 182 tests and published artifact
+`folia-1.21.11-7` from commit `1f8598aac071d60f29794766c191bace016f50bf`. The Home Server must not run
+Gradle; use that CI for builds. Runtime checks are being performed iteratively on CyoriaSMP with no
+players online. A successful startup does not close the ownership blockers above.
