@@ -47,6 +47,7 @@ import org.mvplugins.multiverse.core.locale.message.MessageReplacement.Replace;
 import org.mvplugins.multiverse.core.permissions.CorePermissions;
 import org.mvplugins.multiverse.core.teleportation.BlockSafety;
 import org.mvplugins.multiverse.core.teleportation.LocationManipulation;
+import org.mvplugins.multiverse.core.utils.FoliaScheduler;
 import org.mvplugins.multiverse.core.utils.ServerProperties;
 import org.mvplugins.multiverse.core.utils.compatibility.BukkitCompatibility;
 import org.mvplugins.multiverse.core.utils.compatibility.WorldCompatibility;
@@ -241,16 +242,24 @@ public final class WorldManager {
      * Loads all worlds that are set to autoload.
      */
     private void autoLoadWorlds() {
+        boolean foliaServer = FoliaScheduler.isFoliaServer();
         getWorlds().stream()
                 .filter(world -> !isLoadedWorld(world) && world.isAutoLoad())
-                .forEach(world -> loadWorld(LoadWorldOptions.world(world))
-                        .onFailure(failure ->
-                                Logging.severe("Failed to autoload world '%s': %s: %s",
-                                        world.getName(),
-                                        failure,
-                                        ChatTextFormatter.removeColor(failure.getFailureMessage().formatted())))
-                        .onSuccess(newMVWorld ->
-                                Logging.fine("Autoloaded world %s", newMVWorld.getName())));
+                .forEach(world -> {
+                    if (foliaServer && Bukkit.getWorld(world.getName()) == null) {
+                        Logging.warning("Skipping autoload of world %s because Folia does not support "
+                                + "world loading; waiting for an external world loader.", world.getName());
+                        return;
+                    }
+                    loadWorld(LoadWorldOptions.world(world))
+                            .onFailure(failure ->
+                                    Logging.severe("Failed to autoload world '%s': %s: %s",
+                                            world.getName(),
+                                            failure,
+                                            ChatTextFormatter.removeColor(failure.getFailureMessage().formatted())))
+                            .onSuccess(newMVWorld ->
+                                    Logging.fine("Autoloaded world %s", newMVWorld.getName()));
+                });
     }
 
     /**
