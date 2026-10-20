@@ -43,6 +43,13 @@ public final class WorldTickDeferrer {
      * @param action The action to defer
      */
     public void deferWorldTick(Runnable action) {
+        // Preserve the upstream Paper synchronous semantics (and MockBukkit behavior).
+        // The old BukkitRunnable scheduler is unsupported on Folia.
+        if (FoliaScheduler.isFoliaServer()) {
+            Logging.fine("Deferring Folia world operation to global region scheduler...");
+            FoliaScheduler.runGlobalLater(plugin, action, 1L);
+            return;
+        }
         if (!isIteratingOverLevels()) {
             action.run();
             return;

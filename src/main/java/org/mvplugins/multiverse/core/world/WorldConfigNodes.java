@@ -26,6 +26,7 @@ import org.mvplugins.multiverse.core.config.node.ConfigNode;
 import org.mvplugins.multiverse.core.config.node.ListConfigNode;
 import org.mvplugins.multiverse.core.config.node.NodeGroup;
 import org.mvplugins.multiverse.core.economy.MVEconomist;
+import org.mvplugins.multiverse.core.utils.FoliaScheduler;
 import org.mvplugins.multiverse.core.utils.MaterialConverter;
 import org.mvplugins.multiverse.core.utils.text.ChatTextFormatter;
 import org.mvplugins.multiverse.core.world.helpers.AliasNameConflictChecker;
@@ -127,12 +128,12 @@ final class WorldConfigNodes {
             .defaultValue(true)
             .onLoadAndChange((oldValue, newValue) -> {
                 if (!(world instanceof LoadedMultiverseWorld loadedWorld)) return;
-                loadedWorld.getBukkitWorld().peek(world -> {
-                    if (!world.isClearWeather() && !newValue) {
-                        world.setThundering(false);
-                        world.setStorm(false);
+                FoliaScheduler.runGlobal(config.getMultiverseCore(), () -> loadedWorld.getBukkitWorld().peek(bukkitWorld -> {
+                    if (!bukkitWorld.isClearWeather() && !newValue) {
+                        bukkitWorld.setThundering(false);
+                        bukkitWorld.setStorm(false);
                     }
-                });
+                }));
             }));
 
     final ConfigNode<Boolean> anchorRespawn = node(ConfigNode.builder("anchor-respawn", Boolean.class)
@@ -155,7 +156,8 @@ final class WorldConfigNodes {
             .defaultValue(Difficulty.NORMAL)
             .onLoadAndChange((oldValue, newValue) -> {
                 if (!(world instanceof LoadedMultiverseWorld loadedWorld)) return;
-                loadedWorld.getBukkitWorld().peek(bukkitWorld -> bukkitWorld.setDifficulty(newValue));
+                FoliaScheduler.runGlobal(config.getMultiverseCore(),
+                        () -> loadedWorld.getBukkitWorld().peek(bukkitWorld -> bukkitWorld.setDifficulty(newValue)));
             }));
 
     final ConfigNode<Boolean> entryFeeEnabled = node(ConfigNode.builder("entry-fee.enabled", Boolean.class)
@@ -240,7 +242,8 @@ final class WorldConfigNodes {
             .defaultValue(true)
             .onLoadAndChange((oldValue, newValue) -> {
                 if (!(world instanceof LoadedMultiverseWorld loadedWorld)) return;
-                loadedWorld.getBukkitWorld().peek(bukkitWorld -> bukkitWorld.setPVP(newValue));
+                FoliaScheduler.runGlobal(config.getMultiverseCore(),
+                        () -> loadedWorld.getBukkitWorld().peek(bukkitWorld -> bukkitWorld.setPVP(newValue)));
             }));
 
     final ConfigNode<String> respawnWorld = node(ConfigNode.builder("respawn-world", String.class)
@@ -266,10 +269,10 @@ final class WorldConfigNodes {
             .onLoadAndChange((oldValue, newValue) -> {
                 if (!(world instanceof LoadedMultiverseWorld loadedWorld)) return;
                 if (newValue == null || newValue instanceof NullSpawnLocation) return;
-                loadedWorld.getBukkitWorld().peek(bukkitWorld -> {
+                FoliaScheduler.runGlobal(config.getMultiverseCore(), () -> loadedWorld.getBukkitWorld().peek(bukkitWorld -> {
                     newValue.setWorld(bukkitWorld);
                     bukkitWorld.setSpawnLocation(newValue);
-                });
+                }));
             }));
 
     final ConfigNode<EntitySpawnConfig> enititySpawnConfig = node(ConfigNode.builder("spawning", EntitySpawnConfig.class)

@@ -177,6 +177,23 @@ class WorldManagerTest : TestWithMockBukkit() {
     }
 
     @Test
+    fun `Reload world preserves saved generator settings`() {
+        // Persist settings through the public creation path rather than mutating a
+        // loaded world's internal config node in isolation.
+        val name = "PersistSettingsWorld"
+        val settings = "{\"biome\":\"plains\"}"
+        assertTrue(worldManager.createWorld(
+            CreateWorldOptions.worldName(name).generatorSettings(settings)
+        ).isSuccess)
+        val configured = worldManager.getLoadedWorld(name).get()
+        assertEquals(settings, configured.generatorSettings)
+        assertTrue(worldManager.unloadWorld(UnloadWorldOptions.world(configured).saveBukkitWorld(true)).isSuccess)
+
+        assertTrue(worldManager.loadWorld(LoadWorldOptions.world(configured)).isSuccess)
+        assertEquals(settings, worldManager.getLoadedWorld(name).get().generatorSettings)
+    }
+
+    @Test
     fun `Load world failed - invalid world folder`() {
         assertTrue(worldManager.unloadWorld(UnloadWorldOptions.world(world2)).isSuccess)
         File(Bukkit.getWorldContainer(), "World2/").deleteRecursively()

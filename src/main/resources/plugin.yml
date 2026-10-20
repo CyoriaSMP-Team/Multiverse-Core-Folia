@@ -3,6 +3,7 @@ main: org.mvplugins.multiverse.core.MultiverseCore
 authors: ['dumptruckman', 'Rigby', 'fernferret', 'lithium3141', 'main--', 'benwoo1110', 'Zax71']
 website: 'https://modrinth.com/plugin/multiverse-core'
 description: 'The original Bukkit Multi-World Plugin!'
-softdepend: ['Vault', 'PlaceholderAPI']
+softdepend: ['Vault', 'PlaceholderAPI', 'MoreFoWorld']
 api-version: 1.13
+folia-supported: true
 version: ${version}

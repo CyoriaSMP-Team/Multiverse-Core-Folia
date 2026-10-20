@@ -5,7 +5,6 @@ import com.dumptruckman.minecraft.util.Logging;
 import io.papermc.lib.PaperLib;
 import io.vavr.control.Either;
 import io.vavr.control.Try;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
@@ -20,6 +19,7 @@ import org.mvplugins.multiverse.core.event.MVTeleportDestinationEvent;
 import org.mvplugins.multiverse.core.utils.result.AsyncAttempt;
 import org.mvplugins.multiverse.core.utils.result.AsyncAttemptsAggregate;
 import org.mvplugins.multiverse.core.utils.result.Attempt;
+import org.mvplugins.multiverse.core.utils.FoliaScheduler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -244,7 +244,7 @@ public final class AsyncSafetyTeleporterAction {
         return AsyncAttemptsAggregate.allOfAggregate(toTeleport.stream()
                         .map(passenger -> doAsyncTeleport(passenger, location))
                         .toList())
-                .onSuccess(() -> Bukkit.getScheduler().runTask(multiverseCore, () -> {
+                .onSuccess(() -> FoliaScheduler.runEntity(multiverseCore, teleportee, () -> {
                     passengers.forEach(teleportee::addPassenger);
                     Logging.finer("Mounted %d passengers to %s", passengers.size(), teleportee.getName());
                 }));
@@ -272,7 +272,8 @@ public final class AsyncSafetyTeleporterAction {
 
     private void applyPostTeleportVelocity(@NotNull Entity teleportee) {
         locationOrDestination.peek(destination ->
-                destination.getVelocity(teleportee).peek(velocity ->
-                        Bukkit.getScheduler().runTaskLater(multiverseCore, () -> teleportee.setVelocity(velocity), 1L)));
+                        destination.getVelocity(teleportee).peek(velocity ->
+                                FoliaScheduler.runEntityLater(multiverseCore, teleportee,
+                                        () -> teleportee.setVelocity(velocity), 1L)));
     }
 }

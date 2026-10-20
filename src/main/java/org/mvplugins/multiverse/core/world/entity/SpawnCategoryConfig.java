@@ -8,6 +8,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.SpawnCategory;
+import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.mvplugins.multiverse.core.config.CoreConfig;
 import org.mvplugins.multiverse.core.config.handle.MemoryConfigurationHandle;
@@ -17,6 +18,7 @@ import org.mvplugins.multiverse.core.config.node.ListConfigNode;
 import org.mvplugins.multiverse.core.config.node.Node;
 import org.mvplugins.multiverse.core.config.node.NodeGroup;
 import org.mvplugins.multiverse.core.config.node.serializer.NodeSerializer;
+import org.mvplugins.multiverse.core.utils.FoliaScheduler;
 import org.mvplugins.multiverse.core.world.LoadedMultiverseWorld;
 import org.mvplugins.multiverse.core.world.MultiverseWorld;
 
@@ -25,6 +27,7 @@ import java.util.List;
 
 public final class SpawnCategoryConfig {
 
+    private final Plugin plugin;
     private final CoreConfig config;
     private final SpawnCategory spawnCategory;
     private final MemoryConfigurationHandle handle;
@@ -38,6 +41,7 @@ public final class SpawnCategoryConfig {
             @NotNull SpawnCategory spawnCategory,
             @NotNull ConfigurationSection section
     ) {
+        this.plugin = config.getMultiverseCore();
         this.config = config;
         this.spawnCategory = spawnCategory;
         this.nodes = new Nodes();
@@ -66,10 +70,10 @@ public final class SpawnCategoryConfig {
         if (!(world instanceof LoadedMultiverseWorld loadedWorld)) {
             return;
         }
-        loadedWorld.getBukkitWorld().peek(bukkitWorld -> {
+        FoliaScheduler.runGlobal(plugin, () -> loadedWorld.getBukkitWorld().peek(bukkitWorld -> {
             applyTickPerSpawns(bukkitWorld);
             applySpawnLimit(bukkitWorld);
-        });
+        }));
     }
 
     private void applyTickPerSpawns(@NotNull World bukkitWorld) {

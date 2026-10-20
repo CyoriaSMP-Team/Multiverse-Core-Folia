@@ -16,6 +16,7 @@ import org.jetbrains.annotations.NotNull;
 import org.mvplugins.multiverse.core.config.CoreConfig;
 import org.mvplugins.multiverse.core.teleportation.BlockSafety;
 import org.mvplugins.multiverse.core.teleportation.LocationManipulation;
+import org.mvplugins.multiverse.core.utils.FoliaScheduler;
 import org.mvplugins.multiverse.core.world.entity.EntityPurger;
 import org.mvplugins.multiverse.core.world.location.NullSpawnLocation;
 import org.mvplugins.multiverse.core.world.location.SpawnLocation;
@@ -67,6 +68,11 @@ public final class LoadedMultiverseWorld extends MultiverseWorld {
 
     private Location readSpawnFromWorld(World world) {
         Location location = world.getSpawnLocation();
+
+        // shortcut: trust the engine spawn during Folia global registration; upgrade when registration can finish on the owning region.
+        if (FoliaScheduler.isFoliaServer() && Bukkit.getServer().isGlobalTickThread()) {
+            return location;
+        }
 
         // Verify that location was safe
         if (blockSafety.canSpawnAtLocationSafely(location)) {

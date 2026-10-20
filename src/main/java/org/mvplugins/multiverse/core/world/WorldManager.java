@@ -1,6 +1,7 @@
 package org.mvplugins.multiverse.core.world;
 
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -47,6 +48,7 @@ import org.mvplugins.multiverse.core.locale.message.MessageReplacement.Replace;
 import org.mvplugins.multiverse.core.permissions.CorePermissions;
 import org.mvplugins.multiverse.core.teleportation.BlockSafety;
 import org.mvplugins.multiverse.core.teleportation.LocationManipulation;
+import org.mvplugins.multiverse.core.utils.FoliaScheduler;
 import org.mvplugins.multiverse.core.utils.ServerProperties;
 import org.mvplugins.multiverse.core.utils.compatibility.BukkitCompatibility;
 import org.mvplugins.multiverse.core.utils.compatibility.WorldCompatibility;
@@ -241,16 +243,24 @@ public final class WorldManager {
      * Loads all worlds that are set to autoload.
      */
     private void autoLoadWorlds() {
+        boolean foliaServer = FoliaScheduler.isFoliaServer();
         getWorlds().stream()
                 .filter(world -> !isLoadedWorld(world) && world.isAutoLoad())
-                .forEach(world -> loadWorld(LoadWorldOptions.world(world))
-                        .onFailure(failure ->
-                                Logging.severe("Failed to autoload world '%s': %s: %s",
-                                        world.getName(),
-                                        failure,
-                                        ChatTextFormatter.removeColor(failure.getFailureMessage().formatted())))
-                        .onSuccess(newMVWorld ->
-                                Logging.fine("Autoloaded world %s", newMVWorld.getName())));
+                .forEach(world -> {
+                    if (foliaServer && Bukkit.getWorld(world.getName()) == null) {
+                        Logging.warning("Skipping autoload of world %s because Folia does not support "
+                                + "world loading; waiting for an external world loader.", world.getName());
+                        return;
+                    }
+                    loadWorld(LoadWorldOptions.world(world))
+                            .onFailure(failure ->
+                                    Logging.severe("Failed to autoload world '%s': %s: %s",
+                                            world.getName(),
+                                            failure,
+                                            ChatTextFormatter.removeColor(failure.getFailureMessage().formatted())))
+                            .onSuccess(newMVWorld ->
+                                    Logging.fine("Autoloaded world %s", newMVWorld.getName()));
+                });
     }
 
     /**
@@ -547,7 +557,8 @@ public final class WorldManager {
 
         return Try.of(() -> WorldCreatorCompatibility.ofNameAndKey(mvWorld.getKey(), mvWorld.getName())
                         .environment(mvWorld.getEnvironment())
-                        .seed(mvWorld.getSeed()))
+                        .seed(mvWorld.getSeed())
+                        .generatorSettings(mvWorld.getGeneratorSettings()))
                 .fold(throwable -> Attempt.<WorldCreator, WorldCreatorFailureReason>failure(WorldCreatorFailureReason.BUKKIT_CREATION_FAILED,
                                 Replace.WORLD.with(mvWorld.getName()),
                                 Replace.ERROR.with(throwable)),
@@ -1000,7 +1011,7 @@ public final class WorldManager {
     private Attempt<World, WorldCreatorFailureReason> createBukkitWorld(WorldCreator worldCreator) {
         return Try.of(() -> {
             this.loadTracker.add(worldCreator.name());
-            World world = worldCreator.createWorld();
+            World world = FoliaScheduler.isFoliaServer() ? createFoliaWorld(worldCreator) : worldCreator.createWorld();
             if (world == null) {
                 throw new MultiverseWorldException(Message.of(MVCorei18n.EXCEPTION_MULTIVERSEWORLD_CREATENULL));
             }
@@ -1015,6 +1026,29 @@ public final class WorldManager {
                         Replace.WORLD.with(worldCreator.name()),
                         Replace.ERROR.with(throwable)),
                 Attempt::success);
+    }
+
+    private World createFoliaWorld(WorldCreator worldCreator) throws Exception {
+        if (!Bukkit.getServer().isGlobalTickThread()) {
+            throw new IllegalStateException("Folia world creation must run on the global region");
+        }
+        var moreFoWorld = Bukkit.getPluginManager().getPlugin("MoreFoWorld");
+        if (moreFoWorld == null || !moreFoWorld.isEnabled()) {
+            throw new IllegalStateException("Folia world creation requires MoreFoWorld");
+        }
+        try {
+            return (World) moreFoWorld.getClass().getMethod("createWorld", WorldCreator.class)
+                    .invoke(moreFoWorld, worldCreator);
+        } catch (InvocationTargetException exception) {
+            Throwable cause = exception.getCause();
+            if (cause instanceof Exception checkedException) {
+                throw checkedException;
+            }
+            if (cause instanceof Error error) {
+                throw error;
+            }
+            throw new RuntimeException(cause);
+        }
     }
 
     /**
