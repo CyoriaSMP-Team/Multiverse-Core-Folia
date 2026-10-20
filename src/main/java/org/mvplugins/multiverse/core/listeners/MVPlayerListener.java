@@ -44,6 +44,7 @@ import org.mvplugins.multiverse.core.permissions.CorePermissionsChecker;
 import org.mvplugins.multiverse.core.teleportation.AsyncSafetyTeleporter;
 import org.mvplugins.multiverse.core.teleportation.BlockSafety;
 import org.mvplugins.multiverse.core.teleportation.TeleportQueue;
+import org.mvplugins.multiverse.core.utils.FoliaScheduler;
 import org.mvplugins.multiverse.core.utils.result.ResultChain;
 import org.mvplugins.multiverse.core.world.LoadedMultiverseWorld;
 import org.mvplugins.multiverse.core.world.MultiverseWorld;
@@ -244,7 +245,13 @@ final class MVPlayerListener implements CoreListener {
     }
 
     private void teleportToDestinationOnJoin(Player player, DestinationInstance<?, ?> destination) {
-        asyncSafetyTeleporter.to(destination).passengerMode(config.getPassengerMode()).teleportSingle(player)
+        // Folia invokes PlayerJoinEvent on the player's CURRENT world region. Reading blocks
+        // at a cross-world join destination while still in that region throws
+        // IllegalStateException (world mismatch). Lobby spawn is an explicitly
+        // configured, trusted destination, so do not synchronously scan its blocks
+        // on Folia; keep async teleport and normal Paper safety behavior intact.
+        asyncSafetyTeleporter.to(destination).passengerMode(config.getPassengerMode())
+                .checkSafety(!FoliaScheduler.isFoliaServer()).teleportSingle(player)
                 .onSuccess(result -> Logging.fine("Player %s has been teleported on join",
                         player.getName()))
                 .onFailure(failure -> Logging.warning("Failed to teleport player %s on join: %s",
@@ -432,11 +439,9 @@ final class MVPlayerListener implements CoreListener {
             doGameModeAndFlightEnforcement(player, world);
             return;
         }
-        server.getScheduler().runTaskLater(
-                this.plugin,
+        FoliaScheduler.runEntityLater(this.plugin, player,
                 () -> doGameModeAndFlightEnforcement(player, world),
-                config.getGamemodeAndFlightEnforceDelay()
-        );
+                config.getGamemodeAndFlightEnforceDelay());
     }
 
     private void doGameModeAndFlightEnforcement(Player player, World world) {

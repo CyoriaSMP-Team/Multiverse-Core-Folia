@@ -3,6 +3,7 @@ package org.mvplugins.multiverse.core.teleportation;
 import com.dumptruckman.minecraft.util.Logging;
 import io.vavr.control.Option;
 import jakarta.inject.Inject;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -14,6 +15,7 @@ import org.bukkit.entity.Vehicle;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jvnet.hk2.annotations.Service;
+import org.mvplugins.multiverse.core.utils.FoliaScheduler;
 import org.mvplugins.multiverse.core.config.CoreConfig;
 
 /**
@@ -131,6 +133,14 @@ public final class BlockSafety {
      * @return Whether the player can spawn safely at the given {@link Location}
      */
     public boolean canSpawnAtBlockSafely(@NotNull Block block) {
+        // Folia may assign adjacent chunks to different regions. Never inspect a block
+        // (including the head and supporting block) unless this thread owns it.
+        if (FoliaScheduler.isFoliaServer() &&
+                (!Bukkit.isOwnedByCurrentRegion(block) ||
+                 !Bukkit.isOwnedByCurrentRegion(block.getRelative(0, 1, 0)) ||
+                 !Bukkit.isOwnedByCurrentRegion(block.getRelative(0, -1, 0)))) {
+            return false;
+        }
         Logging.finest("Checking spawn safety for location: %s, %s, %s", block.getX(), block.getY(), block.getZ());
         if (!block.getWorld().getWorldBorder().isInside(block.getLocation())) {
             Logging.finest("Location is outside world border.");
