@@ -205,6 +205,7 @@ public final class SpawnCategoryConfig {
         final ConfigNode<Integer> spawnLimit = node(ConfigNode.builder("spawn-limit", Integer.class)
                 .defaultValue(-2)
                 .suggester(input -> List.of("@unset", "@bukkit", "10", "100", "400", "1000"))
+                .stringParser(SpawnValueStringParser.INSTANCE)
                 .serializer(SpawnValueSerializer.INSTANCE)
                 .onLoadAndChange((oldValue, newValue) -> applyConfigToWorld())
                 .onChange((sender, oldValue, newValue) -> {
