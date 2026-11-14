@@ -6,6 +6,7 @@ on:
 
 jobs:
   github_release_on_push:
+    if: ${{ false }} # Fail closed until exact-commit Folia 1.21.11 runtime evidence gate is implemented
     uses: ./.github/workflows/call.github_release.yml
     secrets: inherit
     with:
