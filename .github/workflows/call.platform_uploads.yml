@@ -29,6 +29,7 @@ on:
 
 jobs:
   platform_uploads:
+    if: ${{ false }} # Fail closed until exact-commit Folia 1.21.11 runtime evidence gate is implemented
     uses: ./.github/workflows/generic.platform_uploads.yml
     secrets: inherit
     with:
