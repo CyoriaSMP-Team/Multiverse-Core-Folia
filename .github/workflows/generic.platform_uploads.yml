@@ -68,6 +68,7 @@ on:
 
 jobs:
   platform_uploads:
+    if: ${{ false }} # Fail closed until exact-commit Folia 1.21.11 runtime evidence gate is implemented
     runs-on: ubuntu-latest
     steps:
     - name: Get release info
