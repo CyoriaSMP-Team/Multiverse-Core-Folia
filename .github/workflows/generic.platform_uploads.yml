@@ -68,6 +68,7 @@ on:
 
 jobs:
   platform_uploads:
+    if: ${{ false }} # Fail closed until this exact commit has Folia 1.21.11 runtime evidence
     runs-on: ubuntu-latest
     steps:
     - name: Get release info
